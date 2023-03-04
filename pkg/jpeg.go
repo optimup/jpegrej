@@ -72,9 +72,38 @@ func Jpegload(path string) (*Jpegreturn, error) {
 	return jpeg, nil
 }
 
+func (j *Jpegreturn) Load(path string) error {
+	if stat, err := os.Stat(path); err != nil || stat.IsDir() {
+		return errors.New("Could not find specified file.")
+	}
+
+	var err error
+
+	j.Data, err = ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	if i := bytes.Index(j.Data, jpegstart); i > 0 {
+		j.Start = i
+	} else {
+		return errors.New("Can't find start")
+	}
+
+	if i := bytes.Index(j.Data, jpegend); i > 0 {
+		j.End = i
+	} else {
+		return errors.New("Can't find end")
+	}
+
+	j.Path = path
+	return nil
+}
+
 // Seed saves the seed
 func (j *Jpegreturn) Seed(seed int64, replace int64) {
 	j.seed = seed
+	rand.Seed(j.seed)
 	//j.rand = rand.New(rand.NewSource(seed))
 	j.amount = replace
 }
@@ -82,7 +111,6 @@ func (j *Jpegreturn) Seed(seed int64, replace int64) {
 // Mosh replaces bytes in range
 func (j *Jpegreturn) Mosh(filepath string) error {
 	buf := make([]byte, j.amount)
-	rand.Seed(j.seed)
 	nbytes, err := rand.Read(buf)
 	if err != nil || nbytes != len(buf) {
 		return errors.New("No bytes in range")

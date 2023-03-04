@@ -18,6 +18,8 @@ package cmd
 import (
 	"fmt"
 	"time"
+	"errors"
+	"path/filepath"
 
 	"github.com/optimup/jpegrej/pkg"
 
@@ -41,6 +43,7 @@ to quickly create a Cobra application.`,
 var (
 	seed   int64
 	amount int64
+	iterations int64
 )
 
 func init() {
@@ -58,15 +61,16 @@ func init() {
 
 	moshCmd.Flags().Int64VarP(&seed, "seed", "s", 0, "Seed for random mosh of jpeg. (int)")
 	moshCmd.Flags().Int64VarP(&amount, "amount", "a", 10, "Amount of bytes to replace. (int)")
+	moshCmd.Flags().Int64VarP(&iterations, "iterations", "i", 1, "Number of iterations (Outputs multiple files). (int)")
 }
 
 func moshRun(cmd *cobra.Command, args []string) error {
 	fmt.Println("Mosh called.")
 
-	filepath := args[0]
+	filein := args[0]
 	fileout := args[1]
 
-	jpeg, err := pkg.Jpegload(filepath)
+	jpeg, err := pkg.Jpegload(filein)
 	if err != nil {
 		return err
 	}
@@ -76,9 +80,43 @@ func moshRun(cmd *cobra.Command, args []string) error {
 	}
 
 	jpeg.Seed(seed, amount)
-	jpeg.Mosh(fileout)
 
-	fmt.Printf("Filename: %s\n\tSeed: %d\n\tSize: %d\n\tStart & End: %d, %d\n", jpeg.Path, seed, len(jpeg.Data), jpeg.Start, jpeg.End)
+	if iterations < 1 {
+		return errors.New("Can't have less than 1 iteration.")
+	} else if (iterations == 1) {
+		jpeg.Mosh(fileout)
+		fmt.Printf("Filename: %s\n\tSeed: %d\n\tSize: %d\n\tStart & End: %d, %d\n", jpeg.Path, seed, len(jpeg.Data), jpeg.Start, jpeg.End)
+	} else {
+		fmt.Printf("would run %d times\n",iterations)
+		//get number of iterations
+		//split outfile and extention
+		ext := filepath.Ext(fileout)
+		filename := fileout[0:len(fileout)-len(ext)]
+		
+
+		var i int64 = 1
+		for ; i <= iterations; i++ {
+			var in string
+			var out string
+			if i == 1 {
+				in = filein
+			} else {
+				in = fmt.Sprintf("%s-%d%s", filename, i-1, ext)
+			}
+			out = fmt.Sprintf("%s-%d%s", filename, i, ext)
+			err := jpeg.Load(in)
+			if err != nil {
+				return err
+			}
+			jpeg.Mosh(out)
+			fmt.Printf("infile: %s, outfile: %s\n", in, out)
+		}
+		//run mosh for each iteration on last picure
+		//save picutre with iteration name (number)
+		//print info about each iterations
+	}
+	
+	
 
 	return nil
 }
