@@ -1,4 +1,4 @@
-module optimup/jpegrej
+module github.com/optimup/jpegrej
 
 go 1.14
 
