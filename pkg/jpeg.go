@@ -36,14 +36,15 @@ type Jpegreturn struct {
 	End    int
 	Data   []byte
 	Path   string
-	rand   *rand.Rand
+	seed   int64
+	//rand   *rand.Rand
 	amount int64
 }
 
 // Jpegload test
 func Jpegload(path string) (*Jpegreturn, error) {
 	if stat, err := os.Stat(path); err != nil || stat.IsDir() {
-		return nil, errors.New("something went wrong")
+		return nil, errors.New("Could not find specified file.")
 	}
 
 	jpeg := new(Jpegreturn)
@@ -73,14 +74,16 @@ func Jpegload(path string) (*Jpegreturn, error) {
 
 // Seed saves the seed
 func (j *Jpegreturn) Seed(seed int64, replace int64) {
-	j.rand = rand.New(rand.NewSource(seed))
+	j.seed = seed
+	//j.rand = rand.New(rand.NewSource(seed))
 	j.amount = replace
 }
 
 // Mosh replaces bytes in range
 func (j *Jpegreturn) Mosh(filepath string) error {
 	buf := make([]byte, j.amount)
-	nbytes, err := j.rand.Read(buf)
+	rand.Seed(j.seed)
+	nbytes, err := rand.Read(buf)
 	if err != nil || nbytes != len(buf) {
 		return errors.New("No bytes in range")
 	}

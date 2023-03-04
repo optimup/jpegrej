@@ -61,7 +61,7 @@ func init() {
 }
 
 func moshRun(cmd *cobra.Command, args []string) error {
-	fmt.Println("mosh called")
+	fmt.Println("Mosh called.")
 
 	filepath := args[0]
 	fileout := args[1]
